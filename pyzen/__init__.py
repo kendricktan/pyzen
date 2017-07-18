@@ -1,5 +1,12 @@
-import requests
+# 2017-07-18
+# Author: Kendrick Tan
+# LICENSE: MIT
+
+
+import binascii
 import json
+
+from jsonrpc_requests import Server, TransportError, ProtocolError
 
 
 class PyZen:
@@ -8,69 +15,38 @@ class PyZen:
     # https://github.com/zcash/zcash/blob/master/doc/payment-api.md
 
     def __init__(self,
-                 url='http://127.0.0.1:8231',
+                 host='127.0.0.1',
+                 port=8231,
                  username='username',
-                 password='password',
-                 timeout=600,
-                 id_='pyzen'):
+                 password='password',):
         """
         Args:
-            url: url to connect to the zen daemon
-                (testnet port: 18231)
+            host: host specified in ~/.zen/zen.conf
+            port: port specified in ~/.zen/zen.conf
             username: rpc username
             password: rpc password
-            timeout: timeout before getting a response (in seconds)
-            testnet: Use the test network or nah
         """
-
-        self.url = url
-        self.username = username.encode('utf-8')
-        self.password = password.encode('utf-8')
-        self.timeout = timeout
-        self.id_ = id_
+        self._rpc_server = Server(
+            'http://{}:{}'.format(host, str(port)), auth=(username, password))
 
     def _rpc_call(self, method, *args):
         """
         Communicate with the zen daemon via rpc
         """
+        resp = self._rpc_server.send_request(method, False, args)
+        return resp
 
-        # Convert json data to string to
-        # communicate via rpc
-        data = json.dumps({
-            'jsonrpc': '1.0',
-            'method': method,
-            'params': args,
-            'id': self.id_
-        })
-
-        r = requests.post(self.url, auth=(self.username, self.password),
-                          data=data, timeout=self.timeout)
-
-        resp = json.loads(r.text)
-
-        if resp['error']:
-            raise Exception(str(resp['error']))
-
-        return resp['result']
-
-    def addnode(self, url, opt='add'):
+    def addnode(self, host, opt='add'):
         """
         Adds node to daemon
 
-        Example call using curl:
-
-        curl --user myusername --data-binary
-        \'{ "jsonrpc": "1.0", "id":"curltest", "method": "addnode",
-            "params": ["192.168.0.6:8233", "onetry"]
-        }\' -H \'content-type: text/plain;\' http://127.0.0.1:8232/\n'}
-
         Args:
-            url: Node url
+            host: Node host
             opt: <add|remove|onetry>
         """
         if opt is not 'add' or opt is not 'remove' or opt is not 'onetry':
             raise ValueError('addnode <node> <add/remove/onetry>')
-        return self._rpc_call(url, 'add')
+        return self._rpc_call(host, 'add')
 
     """ Block info """
 
@@ -94,6 +70,33 @@ class PyZen:
         """
         return self._rpc_call('getblockhash', index)
 
+    def getbestblockhash(self):
+        """
+        Gets the best (tip) block in the longest blockchain
+        A.k.a gets the latest block
+        """
+        return self._rpc_call('getbestblockhash')
+
+    def getbestnblock(self, n):
+        """
+        Gets the n best (tip) block
+        A.k.a gets the N lastest block
+
+        Args:
+            n: number of blocks from tip to retrieve
+        """
+        lastblockhash = self.getbestblockhash()
+
+        last = self.getblock(lastblockhash)
+        blocks = [last]
+        for i in range(n):
+            if not 'previousblockhash' in last:
+                break
+            last = self.getblock(last['previousblockhash'])
+            blocks.append(last)
+
+        return blocks
+
     def getblockcount(self):
         return self._rpc_call('getblockcount')
 
@@ -116,6 +119,44 @@ class PyZen:
 
     """ Transactional info """
 
+    def gettx(self, txid):
+        """
+        Returns the decoded transaction
+
+        Args:
+            txid: transaction id
+        """
+        try:
+            raw = self._rpc_call('getrawtransaction', txid)
+            return self._rpc_call('decoderawtransaction', raw)
+        except (TransportError, ProtocolError) as e:
+            return None
+
+    def gettxs(self, txids):
+        """
+        Returns a list of decoded transactions
+
+        Args:
+            txids: A list of transaction ids
+        """
+        txs = []
+
+        for i in txids:
+            t = self.gettx(i)
+
+            if t is None:
+                continue
+
+            txs.append(t)
+
+        return txs
+
+    """ Wallet information """
+    """
+        Anything beyond this section isn't necessary to make
+        an explorer. Maybe an online wallet? I dunnoe lol
+    """
+
     def getnewaddress(self):
         return self._rpc_call('getnewaddress')
 
@@ -128,15 +169,6 @@ class PyZen:
             minconf: minimum confirmations
         """
         return self._rpc_call('getreceivedbyaccount', '', minconf)
-
-    def gettransaction(self, tid):
-        """
-        Returns an object about the given transaction
-
-        Args:
-            tid: transaction id
-        """
-        return self._rpc_call('gettransaction', tid)
 
     def getbalance(self, minconf=1):
         """

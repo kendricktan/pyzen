@@ -1,2 +1,2 @@
-# pyzencash
-Python API for the Zen client
+# pyzen
+Python API for the ZenCash daemon
