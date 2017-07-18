@@ -72,28 +72,113 @@ class PyZen:
             raise ValueError('addnode <node> <add/remove/onetry>')
         return self._rpc_call(url, 'add')
 
+    """ Block info """
+
+    def getblock(self, bhash):
+        """
+        Returns information about the
+        block with the given hash
+
+        Args:
+            bhash: block hash
+        """
+        return self._rpc_call('getblock', bhash)
+
+    def getblockhash(self, index):
+        """
+        Returns hash of block in best-block-chain
+        at <index>; index 0 is the genesis block
+
+        Argrs:
+            index: hash no.
+        """
+        return self._rpc_call('getblockhash', index)
+
+    def getblockcount(self):
+        return self._rpc_call('getblockcount')
+
+    """ Network info  """
+
     def getinfo(self):
         return self._rpc_call('getinfo')
 
-    def getbalance(self, address):
-        return self._rpc_call('z_getbalance', address)
+    def getpeerinfo(self):
+        return self._rpc_call('getpeerinfo')
 
-    def gettotalbalance(self, minconf=1):
+    def getdifficulty(self):
+        return self._rpc_call('getdifficulty')
+
+    def getmininginfo(self):
+        return self._rpc_call('getmininginfo')
+
+    def getconnectioncount(self):
+        return self._rpc_call('getconnectioncount')
+
+    """ Transactional info """
+
+    def getnewaddress(self):
+        return self._rpc_call('getnewaddress')
+
+    def getreceivedbyaccount(self, minconf=1):
+        """
+        Returns total amount received by addresses in
+        account with at least <minconf> confirmations
+
+        Args:
+            minconf: minimum confirmations
+        """
+        return self._rpc_call('getreceivedbyaccount', '', minconf)
+
+    def gettransaction(self, tid):
+        """
+        Returns an object about the given transaction
+
+        Args:
+            tid: transaction id
+        """
+        return self._rpc_call('gettransaction', tid)
+
+    def getbalance(self, minconf=1):
         """
         Args:
             minconf: Only include transactions confirmed at least this
                      many times
         """
-        return self._rpc_call('gettotalbalance', minconf)
+        return self._rpc_call('getbalance', minconf)
 
-    def getnewaddress(self):
-        return self._rpc_call('getnewaddress')
+    def getaddressesbyaccount(self, minconf=1):
+        """
+        Returns total amount in wallet with minconf confirmations
 
-    def getaddressesbyaccount(self):
-        return self._rpc_call('getaddressesbyaccount', '')
+        Args:
+            minconf: minimum confirmations
+        """
+        return self._rpc_call('getaddressesbyaccount', '', minconf)
+
+    def getreceivedbyaddress(self, address, minconf=1):
+        """
+        Returns the amount received by <address> in transactions
+        with at least <minconf> confirmations. Only for local wallet.
+
+        Args:
+            address: t address
+            minconf: minimum confirmations
+        """
+        return self._rpc_call('getreceivedbyaddress', address, minconf)
+
+    def z_getoperationresult(self):
+        return self._rpc_call('z_getoperationresult')
 
     def z_getnewaddress(self):
         return self._rpc_call('z_getnewaddress')
 
     def z_listaddresses(self):
         return self._rpc_call('z_listaddresses')
+
+    def z_listreceivedbyaddress(self, address):
+        """
+        List what transactions received by address
+        Args:
+            address: z address
+        """
+        return self._rpc_call('z_listreceivedbyaddress', address)
