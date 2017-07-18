@@ -10,7 +10,7 @@ pip install git+https://github.com/kendricktan/pyzen.git@v1.0.0
 # Example usage
 * Make sure your zen daemon is running *
 
-For help setting up ZenCash daemon refer to [this guide](https://github.com/zcash/zcash/wiki/1.0-User-Guide), **just replace zcashd with zend**. You can get zend [here](https://github.com/ZencashOfficial/zen/releases)
+For help setting up ZenCash daemon (zend) refer to [this guide](https://github.com/zcash/zcash/wiki/1.0-User-Guide), **just replace zcashd with zend**. You can get zend [here](https://github.com/ZencashOfficial/zen/releases)
 
 ```python
 from pyzen import PyZen
